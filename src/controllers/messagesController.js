@@ -69,15 +69,29 @@ const deleteMessage = async (req, res) => {
 const sendLocket = async (req, res) => {
   try {
     if (!req.couple) return R.forbidden(res, 'Chưa kết nối với người ấy 💔');
-    const { photo_url, thumbnail_url, caption, filter, sticker_overlay } = req.body;
-    if (!photo_url) return R.badRequest(res, 'Thiếu photo_url');
+    
+    // 🎯 Lấy link ảnh từ S3 (nếu có file upload) hoặc từ body (nếu test API)
+    const photo_url = req.file ? req.file.location : req.body.photo_url;
+    
+    if (!photo_url) return R.badRequest(res, 'Chưa có ảnh nào được tải lên!');
+
+    const { caption, filter, sticker_overlay } = req.body;
 
     const locket = await msgService.sendLocket({
-      coupleId: req.coupleId,
+      coupleId: req.couple.id, // 🎯 Đảm bảo dùng req.couple.id
       senderId: req.user.id,
       receiverId: req.partnerId,
-      photo_url, thumbnail_url, caption, filter, sticker_overlay,
+      photo_url, 
+      thumbnail_url: photo_url, // Lấy luôn link S3 làm ảnh thu nhỏ
+      caption, filter, sticker_overlay,
     });
+    
+    // Phát sự kiện Socket cho người ấy
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('locket-photo-received', locket);
+    }
+
     return R.created(res, locket, 'Ảnh đã gửi 📸');
   } catch (err) {
     return R.error(res, err.message, err.status || 500);
@@ -107,7 +121,7 @@ const getVaultAlbum = async (req, res) => {
   try {
     if (!req.couple) return R.forbidden(res, 'Chưa kết nối với người ấy 💔');
     const { page, limit } = req.query;
-    const result = await msgService.getVaultAlbum(req.coupleId, parseInt(page) || 1, parseInt(limit) || 20);
+    const result = await msgService.getVaultAlbum(req.couple.id, parseInt(page) || 1, parseInt(limit) || 20);
     return R.success(res, result);
   } catch (err) {
     return R.error(res, err.message, err.status || 500);

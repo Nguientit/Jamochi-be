@@ -14,7 +14,7 @@ const {
   getVaultAlbum
 } = require('../controllers/messagesController');
 const { authenticateToken, verifyCoupleAccess } = require('../middleware/auth');
-
+const { uploadLocket } = require('../middleware/upload');
 // Tất cả các route Messages cần xác thực
 router.use(authenticateToken);
 
@@ -25,7 +25,7 @@ router.post('/:message_id/react', reactMessage);
 router.delete('/:message_id', deleteMessage);
 
 // === Locket Photos ===
-router.post('/locket/send', verifyCoupleAccess, sendLocket);
+router.post('/locket/send', verifyCoupleAccess, uploadLocket.single('photo'), sendLocket);
 router.get('/locket/unviewed', getUnviewedLocket);
 router.post('/locket/:locket_id/view', viewLocket);
 router.get('/locket/vault', verifyCoupleAccess, getVaultAlbum);
