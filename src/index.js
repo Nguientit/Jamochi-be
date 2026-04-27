@@ -167,7 +167,7 @@ app.use((req, res) => {
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, async () => {
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`
   ╔════════════════════════════════════════╗
   ║        🚀 JAMOCHI APP BACKEND 🚀       ║
