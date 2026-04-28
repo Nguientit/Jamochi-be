@@ -6,18 +6,21 @@ const R = require('../utils/response');
 const sendMessage = async (req, res) => {
   try {
     if (!req.couple) return R.forbidden(res, 'Chưa kết nối với người ấy 💔');
-    const { type, content, media_url, reply_to_id, sticker_id } = req.body;
+
+    const { type, content, reply_to_id, sticker_id } = req.body;
+    const final_media_url = req.file ? req.file.location : req.body.media_url;
 
     const msg = await msgService.sendMessage({
       coupleId: req.couple.id,
       senderId: req.user.id,
       receiverId: req.partnerId,
-      type, content, media_url, reply_to_id, sticker_id,
+      type, content, reply_to_id, sticker_id,
+      media_url: final_media_url,
     });
 
     const io = req.app.get('io');
     if (io) {
-      io.emit('receive-message', msg); 
+      io.emit('receive-message', msg);
     }
 
     return R.created(res, msg, 'Tin nhắn đã gửi 💌');
@@ -69,10 +72,10 @@ const deleteMessage = async (req, res) => {
 const sendLocket = async (req, res) => {
   try {
     if (!req.couple) return R.forbidden(res, 'Chưa kết nối với người ấy 💔');
-    
+
     // 🎯 Lấy link ảnh từ S3 (nếu có file upload) hoặc từ body (nếu test API)
     const photo_url = req.file ? req.file.location : req.body.photo_url;
-    
+
     if (!photo_url) return R.badRequest(res, 'Chưa có ảnh nào được tải lên!');
 
     const { caption, filter, sticker_overlay } = req.body;
@@ -81,11 +84,11 @@ const sendLocket = async (req, res) => {
       coupleId: req.couple.id, // 🎯 Đảm bảo dùng req.couple.id
       senderId: req.user.id,
       receiverId: req.partnerId,
-      photo_url, 
+      photo_url,
       thumbnail_url: photo_url, // Lấy luôn link S3 làm ảnh thu nhỏ
       caption, filter, sticker_overlay,
     });
-    
+
     // Phát sự kiện Socket cho người ấy
     const io = req.app.get('io');
     if (io) {

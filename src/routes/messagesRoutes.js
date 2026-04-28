@@ -17,7 +17,7 @@ const { uploadLocket } = require('../middleware/upload');
 router.use(authenticateToken);
 
 // === Chat Messages ===
-router.post('/', verifyCoupleAccess, sendMessage); 
+router.post('/', verifyCoupleAccess, uploadLocket.single('file'), sendMessage);
 
 router.get('/', verifyCoupleAccess, getMessages); 
 
