@@ -19,7 +19,11 @@ const register = async ({ email, password, display_name, date_of_birth, gender }
     gender: gender || null,
   });
 
-  const token = sign({ id: user.id });
+  const token = jwt.sign(
+    { id: user.id },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRY || '7d' }
+  );
   const { password_hash: _, ...userData } = user.toJSON();
   return { user: userData, token };
 };
@@ -34,7 +38,11 @@ const login = async ({ email, password }) => {
 
   if (!user.is_active) throw { status: 403, message: 'Tài khoản đã bị vô hiệu hóa' };
 
-  const token = sign({ id: user.id });
+  const token = jwt.sign(
+    { id: user.id },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRY || '7d' }
+  );
   const { password_hash: _, ...userData } = user.toJSON();
 
   // Tìm couple
