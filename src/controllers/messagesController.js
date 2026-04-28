@@ -23,6 +23,33 @@ const sendMessage = async (req, res) => {
       io.emit('receive-message', msg);
     }
 
+    try {
+      const partner = await User.findByPk(req.partnerId);
+
+      if (partner && partner.fcm_token) {
+        let bodyText = content;
+        if (type === 'image') bodyText = 'Đã gửi một ảnh';
+        if (type === 'sticker') bodyText = 'Đã gửi một nhãn dán';
+
+        const payload = {
+          token: partner.fcm_token,
+          notification: {
+            title: req.user.displayName || 'Người yêu bạn',
+            body: bodyText,
+          },
+          data: {
+            type: 'chat_message',
+            message_id: msg.id.toString(),
+          }
+        };
+
+        await messaging.send(payload);
+        console.log('✅ Đã bắn thông báo Push Notification tới:', partner.displayName);
+      }
+    } catch (pushErr) {
+      console.error('🚨 Lỗi gửi thông báo Push:', pushErr);
+    }
+
     return R.created(res, msg, 'Tin nhắn đã gửi 💌');
   } catch (err) {
     return R.error(res, err.message, err.status || 500);
