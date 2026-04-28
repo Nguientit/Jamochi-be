@@ -1,6 +1,4 @@
 // routes/messagesRoutes.js
-// Chat messages, Locket photos, Voice/Video call
-
 const express = require('express');
 const router = express.Router();
 const {
@@ -15,13 +13,16 @@ const {
 } = require('../controllers/messagesController');
 const { authenticateToken, verifyCoupleAccess } = require('../middleware/auth');
 const { uploadLocket } = require('../middleware/upload');
-// Tất cả các route Messages cần xác thực
+
 router.use(authenticateToken);
 
 // === Chat Messages ===
-router.post('/send', verifyCoupleAccess, sendMessage);
-router.get('/history', verifyCoupleAccess, getMessages);
-router.post('/:message_id/react', reactMessage);
+router.post('/', verifyCoupleAccess, sendMessage); 
+
+router.get('/', verifyCoupleAccess, getMessages); 
+
+router.patch('/:message_id/react', reactMessage); 
+
 router.delete('/:message_id', deleteMessage);
 
 // === Locket Photos ===
