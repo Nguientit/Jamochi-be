@@ -51,15 +51,11 @@ const acceptInvite = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.id, {
-      attributes: { exclude: ['password'] }
-    });
-    
-    if (!user) return res.status(404).json({ message: 'User không tồn tại' });
-    
-    return res.json({ success: true, data: user });
+    const result = await authService.getMe(req.user.id);
+
+    return R.success(res, result, 'Lấy profile thành công');
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    return R.error(res, err.message, err.status || 500);
   }
 };
 
