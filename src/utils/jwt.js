@@ -2,7 +2,7 @@
 const jwt = require('jsonwebtoken');
 
 const SECRET = process.env.JWT_SECRET || 'jamochi_secret';
-const EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
+const EXPIRES_IN = process.env.JWT_EXPIRY || '30d';
 
 const sign = (payload) => jwt.sign(payload, SECRET, { expiresIn: EXPIRES_IN });
 
