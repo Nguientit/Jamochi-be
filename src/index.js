@@ -1,6 +1,5 @@
 // src/index.js
 // 📁 JAMOCHI/src/index.js
-// 🛡️ FIX: Gắn `io` vào `app` để controllers emit real-time event
 
 const express = require('express');
 const cors    = require('cors');
@@ -19,8 +18,6 @@ const achievementRoutes    = require('./routes/achievementRoutes');
 const aiRoutes             = require('./routes/aiRoutes');
 const settingsRoutes       = require('./routes/settingsRoutes');
 
-require('./configs/firebase');
-
 const app    = express();
 const server = http.createServer(app);
 
@@ -33,8 +30,6 @@ const io = new Server(server, {
   },
 });
 
-// 🎯 FIX QUAN TRỌNG: Gắn io vào app để controllers dùng được
-// Trong controller: const io = req.app.get('io');
 app.set('io', io);
 
 // ── Socket.IO Auth Middleware ─────────────────────────────────────────────────
@@ -57,7 +52,21 @@ const onlineUsers = new Map(); // userId → socketId
 io.on('connection', (socket) => {
   console.log(`📱 User ${socket.userId} connected: ${socket.id}`);
   onlineUsers.set(socket.userId, socket.id);
-  io.emit('user-online', { userId: socket.userId });
+  
+  // 🎯 Báo cho đối phương biết mình vừa kết nối
+  socket.broadcast.emit('user-online', { userId: socket.userId });
+
+  // 🟢 Lắng nghe event Online chủ động từ Flutter
+  socket.on('user-online-status', ({ userId }) => {
+    onlineUsers.set(userId, socket.id);
+    socket.broadcast.emit('user-online', { userId });
+  });
+
+  // 🔴 Lắng nghe event Offline chủ động từ Flutter (khi ấn Đăng xuất)
+  socket.on('user-offline-status', ({ userId }) => {
+    onlineUsers.delete(userId);
+    socket.broadcast.emit('user-offline', { userId, lastSeen: new Date() });
+  });
 
   // ── Chat ──────────────────────────────────────────────────────────────────
   socket.on('send-message', ({ couple_id, recipient_id, message_text, message_type = 'text' }) => {
@@ -116,9 +125,7 @@ io.on('connection', (socket) => {
     if (s) io.to(s).emit('partner-stopped-typing', { couple_id });
   });
 
-  // ── Mood (backup manual emit nếu cần) ─────────────────────────────────────
-  // Thường do REST API emit qua req.app.get('io') rồi,
-  // nhưng giữ lại để client có thể emit trực tiếp khi cần
+  // ── Mood ──────────────────────────────────────────────────────────────────
   socket.on('mood-updated', ({ couple_id, mood, theme_palette }) => {
     socket.broadcast.emit('partner-mood-changed', {
       couple_id, mood, theme_palette, timestamp: new Date(),
@@ -129,7 +136,7 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`❌ User ${socket.userId} disconnected`);
     onlineUsers.delete(socket.userId);
-    io.emit('user-offline', { userId: socket.userId });
+    socket.broadcast.emit('user-offline', { userId: socket.userId, lastSeen: new Date() });
   });
 });
 
