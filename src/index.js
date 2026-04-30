@@ -2,30 +2,30 @@
 // 📁 JAMOCHI/src/index.js
 
 const express = require('express');
-const cors    = require('cors');
-const http    = require('http');
+const cors = require('cors');
+const http = require('http');
 const { Server } = require('socket.io');
-const jwt     = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 // ── Models & Routes ───────────────────────────────────────────────────────────
-const { sequelize }        = require('./models/index');
-const authRoutes           = require('./routes/authRoutes');
-const moodRoutes           = require('./routes/moodRoutes');
-const vaultRoutes          = require('./routes/vaultRoutes');
-const messagesRoutes       = require('./routes/messagesRoutes');
-const achievementRoutes    = require('./routes/achievementRoutes');
-const aiRoutes             = require('./routes/aiRoutes');
-const settingsRoutes       = require('./routes/settingsRoutes');
+const { sequelize } = require('./models/index');
+const authRoutes = require('./routes/authRoutes');
+const moodRoutes = require('./routes/moodRoutes');
+const vaultRoutes = require('./routes/vaultRoutes');
+const messagesRoutes = require('./routes/messagesRoutes');
+const achievementRoutes = require('./routes/achievementRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
 
 // ── Socket.IO Setup ───────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin:      process.env.FRONTEND_URL || '*',
-    methods:     ['GET', 'POST'],
+    origin: process.env.FRONTEND_URL || '*',
+    methods: ['GET', 'POST'],
     credentials: true,
   },
 });
@@ -38,8 +38,8 @@ io.use((socket, next) => {
     const token = socket.handshake.auth.token;
     if (!token) return next(new Error('Thiếu token'));
 
-    const decoded  = jwt.verify(token, process.env.JWT_SECRET || 'jamochi_secret_2026');
-    socket.userId  = decoded.userId || decoded.id;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'jamochi_secret_2026');
+    socket.userId = decoded.userId || decoded.id;
     next();
   } catch {
     next(new Error('Token không hợp lệ'));
@@ -52,7 +52,7 @@ const onlineUsers = new Map(); // userId → socketId
 io.on('connection', (socket) => {
   console.log(`📱 User ${socket.userId} connected: ${socket.id}`);
   onlineUsers.set(socket.userId, socket.id);
-  
+
   // 🎯 Báo cho đối phương biết mình vừa kết nối
   socket.broadcast.emit('user-online', { userId: socket.userId });
 
@@ -155,13 +155,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: '🚀 Jamochi backend đang chạy!', timestamp: new Date() });
 });
 
-app.use('/api/auth',         authRoutes);
-app.use('/api/mood',         moodRoutes);
-app.use('/api/ai',           aiRoutes);
-app.use('/api/vault',        vaultRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/mood', moodRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/vault', vaultRoutes);
 app.use('/api/achievements', achievementRoutes);
-app.use('/api/settings',     settingsRoutes);
-app.use('/api/messages',     messagesRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/messages', messagesRoutes);
 
 // ── Error Handling ────────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {

@@ -1,5 +1,5 @@
 // services/messageService.js — Chat & Locket
-const { Message, LocketPhoto, User } = require('../models');
+const { Message, LocketPhoto, User, Couple } = require('../models');
 const { Op } = require('sequelize');
 const notificationService = require('./notificationService');
 
@@ -160,68 +160,65 @@ const getVaultAlbum = async (coupleId, page = 1, limit = 20) => {
 };
 
 // ── Lấy Lịch Kỷ Niệm (Memories Calendar) ─────────────────────────────────────
+// ── Lấy Lịch Kỷ Niệm (Memories Calendar) ─────────────────────────────────────
 const getMemoriesCalendar = async (coupleId) => {
-  const { Couple, User } = require('../models'); // Đảm bảo đã import đủ Model
-
-  // 1. Lấy thông tin Couple (để tính ngày kỷ niệm, sinh nhật)
+  // 1. Lấy thông tin Couple - SỬA LẠI các field cho đúng với model Couple.js
   const couple = await Couple.findByPk(coupleId, {
     include: [
+      // Đảm bảo trong models/index.js bạn đã set: Couple.belongsTo(User, {as: 'user1', foreignKey: 'user_1_id'})
       { model: User, as: 'user1', attributes: ['date_of_birth'] },
       { model: User, as: 'user2', attributes: ['date_of_birth'] }
     ]
   });
 
-  // 2. Lấy TẤT CẢ ảnh (từ Locket và Chat)
+  // 2. Lấy TẤT CẢ ảnh
   const locketPhotos = await LocketPhoto.findAll({
-    where: { couple_id: coupleId, is_deleted: false }, // Thêm is_deleted nếu model bạn có
+    where: { couple_id: coupleId },
     attributes: ['created_at', 'photo_url']
-  }).catch(() => []); // Bỏ qua nếu lỗi
+  }).catch(() => []);
 
   const chatPhotos = await Message.findAll({
-    where: { couple_id: coupleId, type: 'image', is_deleted_by_sender: false },
+    where: { couple_id: coupleId, type: 'image' },
     attributes: ['created_at', 'media_url']
   }).catch(() => []);
 
-  // 3. Gộp và sắp xếp tăng dần (Cũ -> Mới)
+  // 3. Gộp và sắp xếp
   const allPhotos = [
     ...locketPhotos.map(p => ({ date: new Date(p.created_at), url: p.photo_url })),
-    ...chatPhotos.map(p => ({ date: new Date(p.created_at), url: p.dataValues.media_url }))
+    ...chatPhotos.map(p => ({
+      date: new Date(p.created_at),
+      url: p.media_url || p.dataValues?.media_url
+    }))
   ].sort((a, b) => a.date - b.date);
 
-  // 4. Khởi tạo cấu trúc Map kết quả
   const monthlyData = {};
 
   const addData = (dateObj, photoUrl = null, emoji = null) => {
-    // Format YYYY-MM
+    if (!dateObj || isNaN(dateObj.getTime())) return; // Chặn lỗi Invalid Date
     const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
     const day = dateObj.getDate();
 
     if (!monthlyData[yearMonth]) monthlyData[yearMonth] = {};
     if (!monthlyData[yearMonth][day]) monthlyData[yearMonth][day] = {};
 
-    // 🎯 CHÌA KHÓA: Vì mảng đã xếp ASC (Cũ -> Mới), ảnh gọi sau sẽ đè ảnh gọi trước
-    // => Đảm bảo luôn lấy bức ảnh CHỤP CUỐI CÙNG CỦA NGÀY
     if (photoUrl) monthlyData[yearMonth][day].photoUrl = photoUrl;
-    
-    // Không đè emoji nếu ngày đó đã có (Ưu tiên sinh nhật/kỷ niệm hơn ngày thường)
     if (emoji && !monthlyData[yearMonth][day].specialEmoji) {
       monthlyData[yearMonth][day].specialEmoji = emoji;
     }
   };
 
-  // 5. Gắn các ngày lễ/kỷ niệm cố định (trong phạm vi 3 năm gần nhất cho nhẹ)
+  // 4. Gắn ngày lễ & kỷ niệm
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1];
 
   years.forEach(year => {
-    // Các ngày lễ cố định
-    addData(new Date(year, 1, 14), null, '💖');  // 14/02 Valentine
-    addData(new Date(year, 2, 8), null, '💐');   // 08/03 Quốc tế phụ nữ
-    addData(new Date(year, 9, 20), null, '🌹');  // 20/10 Phụ nữ VN
-    addData(new Date(year, 11, 24), null, '🎄'); // 24/12 Noel
-    addData(new Date(year, 0, 1), null, '🎆');   // 01/01 Tết dương
+    addData(new Date(year, 1, 14), null, '💖');
+    addData(new Date(year, 2, 8), null, '💐');
+    addData(new Date(year, 9, 20), null, '🌹');
+    addData(new Date(year, 11, 24), null, '🎄');
+    addData(new Date(year, 0, 1), null, '🎆');
 
-    // Sinh nhật của 2 người
+    // SỬA LẠI tên biến theo Model thực tế
     if (couple?.user1?.date_of_birth) {
       const dob = new Date(couple.user1.date_of_birth);
       addData(new Date(year, dob.getMonth(), dob.getDate()), null, '🎂');
@@ -231,24 +228,20 @@ const getMemoriesCalendar = async (coupleId) => {
       addData(new Date(year, dob.getMonth(), dob.getDate()), null, '🎂');
     }
 
-    // Ngày kỷ niệm yêu nhau (Gắn icon nhẫn/ngôi sao vào ngày đó mỗi tháng)
-    if (couple?.start_date) {
-      const startDate = new Date(couple.start_date);
+    // 🎯 SỬA LẠI: anniversary_date thay vì start_date
+    if (couple?.anniversary_date) {
+      const annivDateBase = new Date(couple.anniversary_date);
       for (let m = 0; m < 12; m++) {
-        const annivDate = new Date(year, m, startDate.getDate());
-        if (annivDate >= startDate) addData(annivDate, null, '✨');
+        const d = new Date(year, m, annivDateBase.getDate());
+        if (d >= annivDateBase) addData(d, null, '✨');
       }
     }
   });
 
-  // 6. Gắn ảnh vào (Sẽ đè lên các ô ngày lễ nếu ngày đó có ảnh, nhưng Emoji vẫn hiện góc nhỏ)
-  allPhotos.forEach(p => {
-    addData(p.date, p.url, null);
-  });
+  allPhotos.forEach(p => addData(p.date, p.url, null));
 
   return monthlyData;
 };
-
 module.exports = {
   sendMessage, getMessages, markRead, reactToMessage, deleteMessage,
   sendLocket, getUnviewedLocket, viewLocket, getVaultAlbum, getMemoriesCalendar

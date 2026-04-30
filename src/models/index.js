@@ -14,11 +14,11 @@ const { Badge, UserBadge, Streak } = require('./Achievement');
 
 // 2. Định nghĩa Associations (quan hệ giữa các bảng)
 // MoodForecast -> User
-MoodForecast.belongsTo(User, { 
-  foreignKey: 'user_id', 
+MoodForecast.belongsTo(User, {
+  foreignKey: 'user_id',
   as: 'user'
 });
-User.hasMany(MoodForecast, { 
+User.hasMany(MoodForecast, {
   foreignKey: 'user_id',
   as: 'moodForecasts'
 });
@@ -34,6 +34,14 @@ Message.hasMany(Message, {
   as: 'replies'
 });
 
+Couple.belongsTo(User, {
+  as: 'user1',
+  foreignKey: 'user_1_id'
+});
+Couple.belongsTo(User, {
+  as: 'user2',
+  foreignKey: 'user_2_id'
+});
 // 2. Hàm chạy đồng bộ (Gen DB)
 const syncDB = async () => {
   try {
@@ -45,7 +53,7 @@ const syncDB = async () => {
     // alter: true -> Tự động so sánh model hiện tại và DB, thiếu cột nào nó sẽ tự thêm (Rất tốt cho dev)
     // force: true -> Xóa sạch bảng cũ và tạo lại từ đầu (Chỉ dùng khi test, cẩn thận mất data!)
     await sequelize.sync({ alter: true });
-    
+
     console.log('🚀 Đã tự động tạo/cập nhật toàn bộ bảng trong pgAdmin thành công!');
   } catch (error) {
     console.error('❌ Lỗi khi đồng bộ Database:', error);
@@ -55,7 +63,7 @@ const syncDB = async () => {
 module.exports = {
   sequelize,
   syncDB,
-  User, Couple, MoodForecast, MenstrualCycle, SpecialDate, 
-  LocketPhoto, Message, DayRating, AISession, AITurn, 
+  User, Couple, MoodForecast, MenstrualCycle, SpecialDate,
+  LocketPhoto, Message, DayRating, AISession, AITurn,
   Badge, UserBadge, Streak
 };
