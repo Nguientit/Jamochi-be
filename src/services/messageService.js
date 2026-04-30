@@ -160,12 +160,10 @@ const getVaultAlbum = async (coupleId, page = 1, limit = 20) => {
 };
 
 // ── Lấy Lịch Kỷ Niệm (Memories Calendar) ─────────────────────────────────────
-// ── Lấy Lịch Kỷ Niệm (Memories Calendar) ─────────────────────────────────────
 const getMemoriesCalendar = async (coupleId) => {
-  // 1. Lấy thông tin Couple - SỬA LẠI các field cho đúng với model Couple.js
+  // 1. Lấy thông tin Couple
   const couple = await Couple.findByPk(coupleId, {
     include: [
-      // Đảm bảo trong models/index.js bạn đã set: Couple.belongsTo(User, {as: 'user1', foreignKey: 'user_1_id'})
       { model: User, as: 'user1', attributes: ['date_of_birth'] },
       { model: User, as: 'user2', attributes: ['date_of_birth'] }
     ]
@@ -182,19 +180,19 @@ const getMemoriesCalendar = async (coupleId) => {
     attributes: ['created_at', 'media_url']
   }).catch(() => []);
 
-  // 3. Gộp và sắp xếp
+  // 3. Gộp và sắp xếp (🎯 ĐÃ FIX MÚI GIỜ)
   const allPhotos = [
-    ...locketPhotos.map(p => ({ date: new Date(p.created_at), url: p.photo_url })),
+    ...locketPhotos.map(p => ({ date: p.created_at, url: p.photo_url })),
     ...chatPhotos.map(p => ({
-      date: new Date(p.created_at),
+      date: p.created_at,
       url: p.media_url || p.dataValues?.media_url
     }))
-  ].sort((a, b) => a.date - b.date);
+  ].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const monthlyData = {};
 
   const addData = (dateObj, photoUrl = null, emoji = null) => {
-    if (!dateObj || isNaN(dateObj.getTime())) return; // Chặn lỗi Invalid Date
+    if (!dateObj || isNaN(dateObj.getTime())) return; 
     const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
     const day = dateObj.getDate();
 
@@ -207,7 +205,15 @@ const getMemoriesCalendar = async (coupleId) => {
     }
   };
 
-  // 4. Gắn ngày lễ & kỷ niệm
+  // 🎯 HÀM HELPER: Chuyển đổi UTC sang Local Time (Ví dụ: Việt Nam +7)
+  const toLocalTime = (utcDate) => {
+    if (!utcDate) return null;
+    const date = new Date(utcDate);
+    // Cộng thêm 7 tiếng (7 * 60 * 60 * 1000 milliseconds)
+    return new Date(date.getTime() + (7 * 60 * 60 * 1000));
+  };
+
+  // 4. Gắn ngày lễ & kỷ niệm (Bản chất các ngày này bạn tạo thủ công lúc 00:00 local time nên ko lo bị lệch múi giờ)
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1];
 
@@ -218,7 +224,6 @@ const getMemoriesCalendar = async (coupleId) => {
     addData(new Date(year, 11, 24), null, '🎄');
     addData(new Date(year, 0, 1), null, '🎆');
 
-    // SỬA LẠI tên biến theo Model thực tế
     if (couple?.user1?.date_of_birth) {
       const dob = new Date(couple.user1.date_of_birth);
       addData(new Date(year, dob.getMonth(), dob.getDate()), null, '🎂');
@@ -228,7 +233,6 @@ const getMemoriesCalendar = async (coupleId) => {
       addData(new Date(year, dob.getMonth(), dob.getDate()), null, '🎂');
     }
 
-    // 🎯 SỬA LẠI: anniversary_date thay vì start_date
     if (couple?.anniversary_date) {
       const annivDateBase = new Date(couple.anniversary_date);
       for (let m = 0; m < 12; m++) {
@@ -238,10 +242,15 @@ const getMemoriesCalendar = async (coupleId) => {
     }
   });
 
-  allPhotos.forEach(p => addData(p.date, p.url, null));
+  allPhotos.forEach(p => {
+    const localDate = toLocalTime(p.date);
+    addData(localDate, p.url, null);
+  });
 
   return monthlyData;
 };
+
+
 module.exports = {
   sendMessage, getMessages, markRead, reactToMessage, deleteMessage,
   sendLocket, getUnviewedLocket, viewLocket, getVaultAlbum, getMemoriesCalendar
