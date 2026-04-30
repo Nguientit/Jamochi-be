@@ -11,7 +11,8 @@ const notificationService = require('./notificationService');
 const sendMessage = async ({ coupleId, senderId, receiverId, type = 'text', content, media_url, reply_to_id, sticker_id }) => {
   if (type === 'text' && !content?.trim()) throw { status: 400, message: 'Nội dung tin nhắn không được trống' };
 
-  const message = await Message.create({
+  // 1. Tạo tin nhắn mới trong Database
+  const newMsg = await Message.create({
     couple_id: coupleId,
     sender_id: senderId,
     receiver_id: receiverId,
@@ -20,6 +21,12 @@ const sendMessage = async ({ coupleId, senderId, receiverId, type = 'text', cont
     media_url: media_url || null,
     reply_to_id: reply_to_id || null,
     sticker_id: sticker_id || null,
+  });
+
+  const message = await Message.findByPk(newMsg.id, {
+    include: [
+      { model: Message, as: 'replyTo', attributes: ['id', 'content', 'type', 'sender_id'] },
+    ],
   });
 
   // Push notification
