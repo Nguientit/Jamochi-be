@@ -17,5 +17,4 @@ router.post('/login', login);
 router.post('/generate-invite', authenticateToken, generateInvite);
 router.post('/accept-invite', authenticateToken, acceptInvite);
 router.get('/me', authenticateToken, getMe);
-router.patch('/fcm-token', authenticateToken, updateFcmToken);
 module.exports = router;

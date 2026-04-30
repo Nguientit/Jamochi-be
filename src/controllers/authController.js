@@ -59,20 +59,4 @@ const getMe = async (req, res) => {
   }
 };
 
-const updateFcmToken = async (req, res) => {
-  try {
-    const { fcm_token } = req.body;
-    
-    const user = await User.findByPk(req.user.id);
-    if (!user) return R.error(res, 'Không tìm thấy User', 404);
-
-    user.fcm_token = fcm_token;
-    await user.save();
-
-    return R.success(res, null, 'Cập nhật FCM Token thành công');
-  } catch (err) {
-    return R.error(res, err.message, 500);
-  }
-};
-
-module.exports = { register, login, generateInvite, acceptInvite, getMe, updateFcmToken };
+module.exports = { register, login, generateInvite, acceptInvite, getMe };

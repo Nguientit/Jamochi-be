@@ -23,33 +23,6 @@ const sendMessage = async (req, res) => {
       io.emit('receive-message', msg);
     }
 
-    try {
-      const partner = await User.findByPk(req.partnerId);
-
-      if (partner && partner.fcm_token) {
-        let bodyText = content;
-        if (type === 'image') bodyText = 'Đã gửi một ảnh';
-        if (type === 'sticker') bodyText = 'Đã gửi một nhãn dán';
-
-        const payload = {
-          token: partner.fcm_token,
-          notification: {
-            title: req.user.displayName || 'Người yêu bạn',
-            body: bodyText,
-          },
-          data: {
-            type: 'chat_message',
-            message_id: msg.id.toString(),
-          }
-        };
-
-        await messaging.send(payload);
-        console.log('✅ Đã bắn thông báo Push Notification tới:', partner.displayName);
-      }
-    } catch (pushErr) {
-      console.error('🚨 Lỗi gửi thông báo Push:', pushErr);
-    }
-
     return R.created(res, msg, 'Tin nhắn đã gửi 💌');
   } catch (err) {
     return R.error(res, err.message, err.status || 500);
@@ -100,7 +73,6 @@ const sendLocket = async (req, res) => {
   try {
     if (!req.couple) return R.forbidden(res, 'Chưa kết nối với người ấy 💔');
 
-    // 🎯 Lấy link ảnh từ S3 (nếu có file upload) hoặc từ body (nếu test API)
     const photo_url = req.file ? req.file.location : req.body.photo_url;
 
     if (!photo_url) return R.badRequest(res, 'Chưa có ảnh nào được tải lên!');
@@ -108,11 +80,11 @@ const sendLocket = async (req, res) => {
     const { caption, filter, sticker_overlay } = req.body;
 
     const locket = await msgService.sendLocket({
-      coupleId: req.couple.id, // 🎯 Đảm bảo dùng req.couple.id
+      coupleId: req.couple.id,
       senderId: req.user.id,
       receiverId: req.partnerId,
       photo_url,
-      thumbnail_url: photo_url, // Lấy luôn link S3 làm ảnh thu nhỏ
+      thumbnail_url: photo_url,
       caption, filter, sticker_overlay,
     });
 
