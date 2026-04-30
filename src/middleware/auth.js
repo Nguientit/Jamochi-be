@@ -1,14 +1,14 @@
 // middleware/auth.js
 
-const jwt      = require('jsonwebtoken');
-const { Op }   = require('sequelize');
+const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const { User, Couple } = require('../models');
 
 // ── Xác thực JWT ─────────────────────────────────────────────────────────────
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
-    const token      = authHeader && authHeader.split(' ')[1]; // "Bearer <token>"
+    const token = authHeader && authHeader.split(' ')[1]; // "Bearer <token>"
 
     if (!token) {
       return res.status(401).json({ success: false, message: 'Thiếu token xác thực' });
@@ -34,9 +34,21 @@ const authenticateToken = async (req, res, next) => {
           { user_2_id: user.id },
         ],
       },
+      include: [
+        {
+          model: User,
+          as: 'user1',
+          attributes: ['id', 'display_name', 'avatar_url', 'gender'],
+        },
+        {
+          model: User,
+          as: 'user2',
+          attributes: ['id', 'display_name', 'avatar_url', 'gender'], // Chỉ lấy các trường cần thiết
+        },
+      ],
     });
 
-    req.couple   = couple   || null;
+    req.couple = couple || null;
     req.coupleId = couple?.id || null;
     req.partnerId = couple
       ? (couple.user_1_id === user.id ? couple.user_2_id : couple.user_1_id)
@@ -44,7 +56,7 @@ const authenticateToken = async (req, res, next) => {
 
     // Cập nhật last_seen
     user.last_seen_at = new Date();
-    await user.save({ silent: true }).catch(() => {}); // non-critical
+    await user.save({ silent: true }).catch(() => { }); // non-critical
 
     next();
   } catch (err) {

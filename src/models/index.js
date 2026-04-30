@@ -42,19 +42,33 @@ Couple.belongsTo(User, {
   as: 'user2',
   foreignKey: 'user_2_id'
 });
-// 2. Hàm chạy đồng bộ (Gen DB)
+
+User.hasMany(Couple, {
+  as: 'couplesAsUser1',
+  foreignKey: 'user_1_id'
+});
+User.hasMany(Couple, {
+  as: 'couplesAsUser2',
+  foreignKey: 'user_2_id'
+});
+
+// 3. Hàm chạy đồng bộ (Gen DB)
 const syncDB = async () => {
   try {
     // Kiểm tra kết nối
     await sequelize.authenticate();
     console.log('✅ Đã kết nối thành công với PostgreSQL!');
 
-    // Bắt đầu quá trình gen bảng
-    // alter: true -> Tự động so sánh model hiện tại và DB, thiếu cột nào nó sẽ tự thêm (Rất tốt cho dev)
-    // force: true -> Xóa sạch bảng cũ và tạo lại từ đầu (Chỉ dùng khi test, cẩn thận mất data!)
-    await sequelize.sync({ alter: true });
+    const isDev = process.env.NODE_ENV !== 'production';
+    
+    if (isDev) {
+      await sequelize.sync({ alter: true });
+      console.log('🚀 [DEV] Đã tự động tạo/cập nhật toàn bộ bảng (alter: true)!');
+    } else {
+      await sequelize.sync(); // Chỉ tạo bảng nếu chưa tồn tại, không alter
+      console.log('🚀 [PROD] Đã đồng bộ Database an toàn (không alter)!');
+    }
 
-    console.log('🚀 Đã tự động tạo/cập nhật toàn bộ bảng trong pgAdmin thành công!');
   } catch (error) {
     console.error('❌ Lỗi khi đồng bộ Database:', error);
   }

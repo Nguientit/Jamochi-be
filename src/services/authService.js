@@ -43,6 +43,18 @@ const login = async ({ email, password }) => {
       status: 'active',
       [Op.or]: [{ user_1_id: user.id }, { user_2_id: user.id }],
     },
+    include: [
+      {
+        model: User,
+        as: 'user1',
+        attributes: ['id', 'display_name', 'avatar_url', 'gender'],
+      },
+      {
+        model: User,
+        as: 'user2',
+        attributes: ['id', 'display_name', 'avatar_url', 'gender'],
+      },
+    ],
   });
 
   return { user: userData, token, couple: couple || null };
@@ -115,8 +127,20 @@ const getMe = async (userId) => {
   const couple = await Couple.findOne({
     where: {
       status: 'active',
-      [Op.or]: [{ user_1_id: userId }, { user_2_id: userId }],
+      [Op.or]: [{ user_1_id: user.id }, { user_2_id: user.id }],
     },
+    include: [
+      {
+        model: User,
+        as: 'user1',
+        attributes: ['id', 'display_name', 'avatar_url', 'gender'],
+      },
+      {
+        model: User,
+        as: 'user2',
+        attributes: ['id', 'display_name', 'avatar_url', 'gender'],
+      },
+    ],
   });
   return { user, couple };
 };
