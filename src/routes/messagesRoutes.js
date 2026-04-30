@@ -9,7 +9,8 @@ const {
   sendLocket,
   getUnviewedLocket,
   viewLocket,
-  getVaultAlbum
+  getVaultAlbum,
+  getMemoriesCalendar
 } = require('../controllers/messagesController');
 const { authenticateToken, verifyCoupleAccess } = require('../middleware/auth');
 const { uploadLocket } = require('../middleware/upload');
@@ -25,10 +26,13 @@ router.patch('/:message_id/react', reactMessage);
 
 router.delete('/:message_id', deleteMessage);
 
+router.get('/memories', verifyCoupleAccess, getMemoriesCalendar);
+
 // === Locket Photos ===
 router.post('/locket/send', verifyCoupleAccess, uploadLocket.single('photo'), sendLocket);
 router.get('/locket/unviewed', getUnviewedLocket);
 router.post('/locket/:locket_id/view', viewLocket);
 router.get('/locket/vault', verifyCoupleAccess, getVaultAlbum);
 
+// Thêm vào routes/messagesRoutes.js
 module.exports = router;

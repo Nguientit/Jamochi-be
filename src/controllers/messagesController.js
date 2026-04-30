@@ -130,4 +130,15 @@ const getVaultAlbum = async (req, res) => {
   }
 };
 
-module.exports = { sendMessage, getMessages, reactMessage, deleteMessage, sendLocket, getUnviewedLocket, viewLocket, getVaultAlbum };
+const getMemoriesCalendar = async (req, res) => {
+  try {
+    if (!req.couple) return R.forbidden(res, 'Chưa kết nối với người ấy 💔');
+    
+    const data = await msgService.getMemoriesCalendar(req.couple.id);
+    return R.success(res, data, 'Lấy lịch kỷ niệm thành công');
+  } catch (err) {
+    return R.error(res, err.message, err.status || 500);
+  }
+};
+
+module.exports = { sendMessage, getMessages, reactMessage, deleteMessage, sendLocket, getUnviewedLocket, viewLocket, getVaultAlbum, getMemoriesCalendar };
