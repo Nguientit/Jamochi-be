@@ -7,8 +7,6 @@ const R = require('../utils/response');
 // ── POST /api/mood/forecast ───────────────────────────────────────────────────
 const upsertForecast = async (req, res) => {
   try {
-    // 🛡️ FIX GỐC RỄ: req.couple có thể là undefined nếu middleware chưa gắn
-    // Middleware verifyCoupleAccess phải chạy TRƯỚC và gắn req.couple
     const coupleId = req.couple?.id ?? req.coupleId ?? null;
 
     if (!coupleId) {
@@ -25,7 +23,6 @@ const upsertForecast = async (req, res) => {
       mood, mood_score, mood_emojis, needs, needs_note,
     });
 
-    // 🎯 Emit Socket.IO để partner nhận real-time (nếu io được gắn vào app)
     const io = req.app.get('io');
     if (io) {
       const theme = moodService.getMoodTheme(mood);
@@ -50,7 +47,6 @@ const upsertForecast = async (req, res) => {
 // ── GET /api/mood/forecast/today ─────────────────────────────────────────────
 const getTodayForecast = async (req, res) => {
   try {
-    // 🛡️ FIX: Lấy coupleId từ nhiều nguồn phòng trường hợp middleware khác nhau
     const coupleId = req.couple?.id ?? req.coupleId ?? null;
 
     if (!coupleId) {

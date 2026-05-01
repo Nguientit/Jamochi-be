@@ -62,7 +62,7 @@ const getPeriodPrediction = async (req, res) => {
 
 const getSpecialDates = async (req, res) => {
   try {
-    const coupleId = req.user.couple_id;
+    const coupleId = req.coupleId;
     const dates = await specialDateService.getDatesByCouple(coupleId);
     res.status(200).json({ success: true, data: dates });
   } catch (error) {
@@ -73,7 +73,7 @@ const getSpecialDates = async (req, res) => {
 // Thêm ngày kỷ niệm
 const createSpecialDate = async (req, res) => {
   try {
-    const coupleId = req.user.couple_id;
+    const coupleId = req.coupleId;
     const userId = req.user.id;
     const { title, date } = req.body;
 
@@ -92,7 +92,7 @@ const createSpecialDate = async (req, res) => {
 // Cập nhật ngày kỷ niệm
 const updateSpecialDate = async (req, res) => {
   try {
-    const coupleId = req.user.couple_id;
+    const coupleId = req.coupleId;
     const dateId = req.params.id; // Lấy từ /dates/:id
     const { title, date } = req.body;
 
@@ -106,7 +106,7 @@ const updateSpecialDate = async (req, res) => {
 // Xóa ngày kỷ niệm
 const deleteSpecialDate = async (req, res) => {
   try {
-    const coupleId = req.user.couple_id;
+    const coupleId = req.coupleId;
     const dateId = req.params.id;
 
     await specialDateService.deleteDate(coupleId, dateId);
@@ -118,7 +118,7 @@ const deleteSpecialDate = async (req, res) => {
 
 const updateAnniversary = async (req, res) => {
   try {
-    const coupleId = req.user.couple_id;
+    const coupleId = req.coupleId;
     const { date } = req.body;
 
     if (!date) {
