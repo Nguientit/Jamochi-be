@@ -66,7 +66,11 @@ const getSpecialDates = async (req, res) => {
     const dates = await specialDateService.getDatesByCouple(coupleId);
     res.status(200).json({ success: true, data: dates });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message || 'Lỗi server' });
+    res.status(500).json({ 
+      success: false, 
+      message: error.message,
+      debug: error.stack
+    });
   }
 };
 
