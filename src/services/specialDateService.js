@@ -1,13 +1,14 @@
-// services/specialDateService.js
-const SpecialDate = require('../models/SpecialDate');
-// 1. Lấy danh sách ngày
+const { SpecialDate } = require('../models'); 
+
+// 1. Lấy danh sách
 const getDatesByCouple = async (coupleId) => {
   return await SpecialDate.findAll({
     where: { couple_id: coupleId },
     order: [['target_date', 'ASC']]
   });
 };
-// 2. Thêm ngày mới
+
+// 2. Thêm mới
 const createDate = async (coupleId, userId, title, date) => {
   return await SpecialDate.create({
     couple_id: coupleId,
@@ -18,13 +19,15 @@ const createDate = async (coupleId, userId, title, date) => {
   });
 };
 
-// 3. Sửa ngày
+// 3. Cập nhật
 const updateDate = async (coupleId, dateId, title, date) => {
   const specialDate = await SpecialDate.findOne({
     where: { id: dateId, couple_id: coupleId }
   });
 
-  if (!specialDate) throw new Error('Không tìm thấy ngày kỷ niệm');
+  if (!specialDate) {
+    throw new Error('Không tìm thấy ngày kỷ niệm');
+  }
 
   return await specialDate.update({ 
     title: title, 
@@ -32,7 +35,7 @@ const updateDate = async (coupleId, dateId, title, date) => {
   });
 };
 
-// 4. Xóa ngày
+// 4. Xóa
 const deleteDate = async (coupleId, dateId) => {
   const specialDate = await SpecialDate.findOne({
     where: { id: dateId, couple_id: coupleId }
