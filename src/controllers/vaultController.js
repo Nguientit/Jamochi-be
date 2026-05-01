@@ -1,5 +1,5 @@
 // controllers/vault.controller.js
-const { Couple } = require('../models'); 
+const { Couple } = require('../models');
 const specialDateService = require('../services/specialDateService');
 const vaultService = require('../services/vaultService');
 const userService = require('../services/userService');
@@ -63,17 +63,17 @@ const getPeriodPrediction = async (req, res) => {
 const getSpecialDates = async (req, res) => {
   try {
     const coupleId = req.coupleId;
+
+    if (!coupleId) {
+      return res.status(400).json({ success: false, message: 'Missing coupleId' });
+    }
+
     const dates = await specialDateService.getDatesByCouple(coupleId);
     res.status(200).json({ success: true, data: dates });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message,
-      debug: error.stack
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
-
 // Thêm ngày kỷ niệm
 const createSpecialDate = async (req, res) => {
   try {
