@@ -58,37 +58,80 @@ const getPeriodPrediction = async (req, res) => {
   } catch (err) { return R.error(res, err.message, err.status || 500); }
 };
 
-// ── Special Dates ─────────────────────────────────────────────────────────────
-const createSpecialDate = async (req, res) => {
-  try {
-    if (!req.couple) return R.forbidden(res, 'Chưa kết nối với người ấy 💔');
-    const { title, target_date } = req.body;
-    if (!title || !target_date) return R.badRequest(res, 'Thiếu title hoặc target_date');
-    const result = await vaultService.createSpecialDate({ coupleId: req.coupleId, userId: req.user.id, ...req.body });
-    return R.created(res, result, 'Đã thêm ngày đặc biệt 🎉');
-  } catch (err) { return R.error(res, err.message, err.status || 500); }
-};
-
 const getSpecialDates = async (req, res) => {
   try {
-    if (!req.couple) return R.forbidden(res, 'Chưa kết nối với người ấy 💔');
-    const result = await vaultService.getSpecialDates(req.coupleId);
-    return R.success(res, result);
-  } catch (err) { return R.error(res, err.message, err.status || 500); }
+    const coupleId = req.user.couple_id;
+    const dates = await specialDateService.getDatesByCouple(coupleId);
+    res.status(200).json({ success: true, data: dates });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Lỗi server' });
+  }
 };
 
+// Thêm ngày kỷ niệm
+const createSpecialDate = async (req, res) => {
+  try {
+    const coupleId = req.user.couple_id;
+    const { title, date } = req.body;
+
+    if (!title || !date) {
+      return res.status(400).json({ success: false, message: 'Vui lòng nhập tên và ngày' });
+    }
+
+    const newDate = await specialDateService.createDate(coupleId, title, date);
+    res.status(201).json({ success: true, data: newDate });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Lỗi server' });
+  }
+};
+
+// Cập nhật ngày kỷ niệm
 const updateSpecialDate = async (req, res) => {
   try {
-    const result = await vaultService.updateSpecialDate(req.params.date_id, req.coupleId, req.body);
-    return R.success(res, result);
-  } catch (err) { return R.error(res, err.message, err.status || 500); }
+    const coupleId = req.user.couple_id;
+    const dateId = req.params.id; // Lấy từ /dates/:id
+    const { title, date } = req.body;
+
+    const updatedDate = await specialDateService.updateDate(coupleId, dateId, title, date);
+    res.status(200).json({ success: true, data: updatedDate });
+  } catch (error) {
+    res.status(404).json({ success: false, message: error.message });
+  }
 };
 
+// Xóa ngày kỷ niệm
 const deleteSpecialDate = async (req, res) => {
   try {
-    await vaultService.deleteSpecialDate(req.params.date_id, req.coupleId);
-    return R.success(res, null, 'Đã xóa');
-  } catch (err) { return R.error(res, err.message, err.status || 500); }
+    const coupleId = req.user.couple_id;
+    const dateId = req.params.id;
+
+    await specialDateService.deleteDate(coupleId, dateId);
+    res.status(200).json({ success: true, message: 'Đã xóa thành công' });
+  } catch (error) {
+    res.status(404).json({ success: false, message: error.message });
+  }
 };
 
-module.exports = { updateProfile, updateMeasurements, getPartner, logPeriodStart, logPeriodEnd, getCycleHistory, getPeriodPrediction, createSpecialDate, getSpecialDates, updateSpecialDate, deleteSpecialDate };
+const updateAnniversary = async (req, res) => {
+  try {
+    const coupleId = req.user.couple_id;
+    const { date } = req.body;
+
+    if (!date) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn ngày' });
+    }
+
+    const couple = await Couple.findByPk(coupleId);
+    if (!couple) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy cặp đôi' });
+    }
+
+    // Cập nhật ngày vào DB
+    await couple.update({ anniversary_date: date });
+
+    res.status(200).json({ success: true, message: 'Đã cập nhật ngày bên nhau', data: couple });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Lỗi server' });
+  }
+};
+module.exports = { updateProfile, updateMeasurements, getPartner, logPeriodStart, logPeriodEnd, getCycleHistory, getPeriodPrediction, createSpecialDate, getSpecialDates, updateSpecialDate, deleteSpecialDate, updateAnniversary };

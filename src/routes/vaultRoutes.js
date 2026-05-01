@@ -1,6 +1,4 @@
 // routes/vaultRoutes.js
-// Tab "Vault" - Lưu thông tin số đo, ngày kỷ niệm, sinh nhật, v.v.
-
 const express = require('express');
 const router = express.Router();
 const {
@@ -15,6 +13,7 @@ const {
   getSpecialDates,
   updateSpecialDate,
   deleteSpecialDate,
+  updateAnniversary
 } = require('../controllers/vaultController');
 const { authenticateToken } = require('../middleware/auth');
 const { verifyCoupleAccess } = require('../middleware/couple');
@@ -34,9 +33,10 @@ router.get('/period/history', getCycleHistory);
 router.get('/period/next-prediction', getPeriodPrediction);
 
 // === Ngày đặc biệt (Kỷ niệm, Sinh nhật, 20/10, v.v.) ===
-router.post('/special-dates', verifyCoupleAccess, createSpecialDate);
-router.get('/special-dates', verifyCoupleAccess, getSpecialDates);
-router.put('/special-dates/:date_id', verifyCoupleAccess, updateSpecialDate);
-router.delete('/special-dates/:date_id', verifyCoupleAccess, deleteSpecialDate);
+router.get('/dates', verifyCoupleAccess, getSpecialDates);
+router.post('/dates', verifyCoupleAccess, createSpecialDate);
+router.put('/dates/:id', verifyCoupleAccess, updateSpecialDate);
+router.delete('/dates/:id', verifyCoupleAccess, deleteSpecialDate);
+router.put('/anniversary', verifyCoupleAccess, updateAnniversary); 
 
 module.exports = router;
