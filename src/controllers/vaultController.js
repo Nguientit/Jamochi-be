@@ -1,6 +1,5 @@
 // controllers/vault.controller.js
 const { Couple } = require('../models');
-const specialDateService = require('../services/specialDateService');
 const vaultService = require('../services/vaultService');
 const userService = require('../services/userService');
 const R = require('../utils/response');
@@ -33,7 +32,11 @@ const logPeriodStart = async (req, res) => {
   try {
     const { period_start, symptoms, pain_level, notes } = req.body;
     if (!period_start) return R.badRequest(res, 'Thiếu ngày bắt đầu');
-    const result = await vaultService.logPeriodStart({ userId: req.user.id, coupleId: req.coupleId, period_start, symptoms, pain_level, notes });
+    const result = await vaultService.logPeriodStart({
+      userId: req.user.id,
+      coupleId: req.coupleId,
+      period_start, symptoms, pain_level, notes,
+    });
     return R.created(res, result, 'Đã ghi nhận kỳ kinh 🌸');
   } catch (err) { return R.error(res, err.message, err.status || 500); }
 };
@@ -60,86 +63,89 @@ const getPeriodPrediction = async (req, res) => {
   } catch (err) { return R.error(res, err.message, err.status || 500); }
 };
 
+// ── Special Dates ─────────────────────────────────────────────────────────────
 const getSpecialDates = async (req, res) => {
   try {
-    const coupleId = req.coupleId;
-
-    if (!coupleId) {
-      return res.status(400).json({ success: false, message: 'Missing coupleId' });
-    }
-
-    const dates = await specialDateService.getDatesByCouple(coupleId);
-    res.status(200).json({ success: true, data: dates });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+    const dates = await vaultService.getSpecialDates(req.coupleId);
+    return R.success(res, dates);
+  } catch (err) { return R.error(res, err.message, err.status || 500); }
 };
-// Thêm ngày kỷ niệm
+
 const createSpecialDate = async (req, res) => {
   try {
-    const coupleId = req.coupleId;
-    const userId = req.user.id;
-    const { title, date } = req.body;
+    const {
+      title, description, type, date,
+      is_recurring, recurrence,
+      icon_emoji, color_hex, notify_days_before,
+    } = req.body;
 
-    if (!title || !date) {
-      return res.status(400).json({ success: false, message: 'Vui lòng nhập tên và ngày' });
-    }
+    if (!title || !date) return R.badRequest(res, 'Thiếu title hoặc date');
 
-    // 🎯 Truyền userId vào service
-    const newDate = await specialDateService.createDate(coupleId, userId, title, date);
-    res.status(201).json({ success: true, data: newDate });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message || 'Lỗi server' });
-  }
+    const result = await vaultService.createSpecialDate({
+      coupleId: req.coupleId,
+      userId: req.user.id,
+      title,
+      description,
+      type: type || 'anniversary',
+      target_date: date,
+      is_recurring,
+      recurrence,
+      icon_emoji,
+      color_hex,
+      notify_days_before,
+    });
+
+    return R.created(res, result, 'Thêm ngày đặc biệt thành công ✨');
+  } catch (err) { return R.error(res, err.message, err.status || 500); }
 };
 
-// Cập nhật ngày kỷ niệm
 const updateSpecialDate = async (req, res) => {
   try {
-    const coupleId = req.coupleId;
-    const dateId = req.params.id; // Lấy từ /dates/:id
-    const { title, date } = req.body;
+    const {
+      title, description, date,
+      icon_emoji, color_hex,
+      notify_days_before, is_notification_enabled,
+    } = req.body;
 
-    const updatedDate = await specialDateService.updateDate(coupleId, dateId, title, date);
-    res.status(200).json({ success: true, data: updatedDate });
-  } catch (error) {
-    res.status(404).json({ success: false, message: error.message });
-  }
+    // Map `date` → `target_date` để khớp với service
+    const updates = {
+      title, description,
+      target_date: date,
+      icon_emoji, color_hex,
+      notify_days_before, is_notification_enabled,
+    };
+
+    // Loại bỏ các key undefined để không ghi đè giá trị cũ
+    Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+
+    const result = await vaultService.updateSpecialDate(req.params.id, req.coupleId, updates);
+    return R.success(res, result, 'Cập nhật thành công');
+  } catch (err) { return R.error(res, err.message, err.status || 500); }
 };
 
-// Xóa ngày kỷ niệm
 const deleteSpecialDate = async (req, res) => {
   try {
-    const coupleId = req.coupleId;
-    const dateId = req.params.id;
-
-    await specialDateService.deleteDate(coupleId, dateId);
-    res.status(200).json({ success: true, message: 'Đã xóa thành công' });
-  } catch (error) {
-    res.status(404).json({ success: false, message: error.message });
-  }
+    await vaultService.deleteSpecialDate(req.params.id, req.coupleId);
+    return R.success(res, null, 'Đã xóa thành công');
+  } catch (err) { return R.error(res, err.message, err.status || 500); }
 };
 
 const updateAnniversary = async (req, res) => {
   try {
-    const coupleId = req.coupleId;
     const { date } = req.body;
+    if (!date) return R.badRequest(res, 'Vui lòng chọn ngày');
 
-    if (!date) {
-      return res.status(400).json({ success: false, message: 'Vui lòng chọn ngày' });
-    }
+    const couple = await Couple.findByPk(req.coupleId);
+    if (!couple) return R.notFound(res, 'Không tìm thấy cặp đôi');
 
-    const couple = await Couple.findByPk(coupleId);
-    if (!couple) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy cặp đôi' });
-    }
-
-    // Cập nhật ngày vào DB
     await couple.update({ anniversary_date: date });
-
-    res.status(200).json({ success: true, message: 'Đã cập nhật ngày bên nhau', data: couple });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message || 'Lỗi server' });
-  }
+    return R.success(res, couple, 'Đã cập nhật ngày bên nhau 💕');
+  } catch (err) { return R.error(res, err.message, err.status || 500); }
 };
-module.exports = { updateProfile, updateMeasurements, getPartner, logPeriodStart, logPeriodEnd, getCycleHistory, getPeriodPrediction, createSpecialDate, getSpecialDates, updateSpecialDate, deleteSpecialDate, updateAnniversary };
+
+module.exports = {
+  updateProfile, updateMeasurements, getPartner,
+  logPeriodStart, logPeriodEnd, getCycleHistory, getPeriodPrediction,
+  createSpecialDate, getSpecialDates, updateSpecialDate, deleteSpecialDate,
+  updateAnniversary,
+};
