@@ -1,6 +1,5 @@
 // services/specialDateService.js
-const { SpecialDate } = require('../models');
-
+const SpecialDate = require('../models/SpecialDate');
 // 1. Lấy danh sách ngày
 const getDatesByCouple = async (coupleId) => {
   return await SpecialDate.findAll({
