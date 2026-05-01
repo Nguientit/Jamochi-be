@@ -47,6 +47,7 @@ const SpecialDate = sequelize.define('SpecialDate', {
   target_date: {
     type: DataTypes.DATEONLY,
     allowNull: false,
+    field: 'target_date',
   },
 
   // Lặp lại?

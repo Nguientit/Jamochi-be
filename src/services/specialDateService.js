@@ -2,10 +2,21 @@ const { SpecialDate } = require('../models');
 
 // 1. Lấy danh sách
 const getDatesByCouple = async (coupleId) => {
-  return await SpecialDate.findAll({
-    where: { couple_id: coupleId },
-    order: [['target_date', 'ASC']]
-  });
+  try {
+    if (!SpecialDate) {
+      throw new Error("Model SpecialDate chưa được import đúng!");
+    }
+
+    const dates = await SpecialDate.findAll({
+      where: { couple_id: coupleId },
+      order: [['target_date', 'ASC']] 
+    });
+
+    return dates;
+  } catch (error) {
+    console.error('🔴 LỖI DATABASE TẠI GET_DATES:', error.message);
+    throw error; 
+  }
 };
 
 // 2. Thêm mới
