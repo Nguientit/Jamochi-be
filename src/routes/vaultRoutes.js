@@ -16,7 +16,7 @@ const {
   updateAnniversary
 } = require('../controllers/vaultController');
 const { authenticateToken } = require('../middleware/auth');
-const { verifyCoupleAccess } = require('../middleware/couple');
+const { verifyCoupleAccess } = require('../middleware/auth');
 
 // Tất cả các route Vault cần xác thực
 router.use(authenticateToken);
