@@ -5,16 +5,17 @@ const { SpecialDate } = require('../models');
 const getDatesByCouple = async (coupleId) => {
   return await SpecialDate.findAll({
     where: { couple_id: coupleId },
-    order: [['date', 'ASC']] // Sắp xếp ngày từ gần đến xa
+    order: [['target_date', 'ASC']]
   });
 };
-
 // 2. Thêm ngày mới
-const createDate = async (coupleId, title, date) => {
+const createDate = async (coupleId, userId, title, date) => {
   return await SpecialDate.create({
     couple_id: coupleId,
-    title,
-    date
+    created_by: userId,
+    title: title,
+    target_date: date,
+    type: 'anniversary'
   });
 };
 
@@ -24,11 +25,12 @@ const updateDate = async (coupleId, dateId, title, date) => {
     where: { id: dateId, couple_id: coupleId }
   });
 
-  if (!specialDate) {
-    throw new Error('Không tìm thấy ngày kỷ niệm');
-  }
+  if (!specialDate) throw new Error('Không tìm thấy ngày kỷ niệm');
 
-  return await specialDate.update({ title, date });
+  return await specialDate.update({ 
+    title: title, 
+    target_date: date
+  });
 };
 
 // 4. Xóa ngày

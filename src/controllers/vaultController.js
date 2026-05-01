@@ -1,4 +1,6 @@
 // controllers/vault.controller.js
+const { Couple } = require('../models'); 
+const specialDateService = require('../services/specialDateService');
 const vaultService = require('../services/vaultService');
 const userService = require('../services/userService');
 const R = require('../utils/response');
@@ -72,13 +74,15 @@ const getSpecialDates = async (req, res) => {
 const createSpecialDate = async (req, res) => {
   try {
     const coupleId = req.user.couple_id;
+    const userId = req.user.id;
     const { title, date } = req.body;
 
     if (!title || !date) {
       return res.status(400).json({ success: false, message: 'Vui lòng nhập tên và ngày' });
     }
 
-    const newDate = await specialDateService.createDate(coupleId, title, date);
+    // 🎯 Truyền userId vào service
+    const newDate = await specialDateService.createDate(coupleId, userId, title, date);
     res.status(201).json({ success: true, data: newDate });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || 'Lỗi server' });
