@@ -76,6 +76,37 @@ const updateNotificationSettings = async (req, res) => {
   }
 };
 
+const updateNickname = async (req, res) => {
+  try {
+    const userId = req.user.id; 
+    const { nickname } = req.body;
+
+    if (!nickname || nickname.trim() === '') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Biệt danh không được để trống!' 
+      });
+    }
+
+    const updatedUser = await userService.updateProfile(userId, { 
+      nickname: nickname.trim() 
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật biệt danh thành công 🥰',
+      data: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Lỗi khi update nickname:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Lỗi server!' 
+    });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -83,4 +114,5 @@ module.exports = {
   updateTheme,
   getNotificationSettings,
   updateNotificationSettings,
+  updateNickname
 };
