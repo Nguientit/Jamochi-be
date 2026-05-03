@@ -13,12 +13,12 @@ const {
   getMemoriesCalendar
 } = require('../controllers/messagesController');
 const { authenticateToken, verifyCoupleAccess } = require('../middleware/auth');
-const { uploadLocket } = require('../middleware/upload');
+const { upload } = require('../middleware/upload');
 
 router.use(authenticateToken);
 
 // === Chat Messages ===
-router.post('/', verifyCoupleAccess, uploadLocket.single('file'), sendMessage);
+router.post('/', verifyCoupleAccess, upload.single('file'), sendMessage);
 
 router.get('/', verifyCoupleAccess, getMessages); 
 
@@ -29,7 +29,7 @@ router.delete('/:message_id', deleteMessage);
 router.get('/memories', verifyCoupleAccess, getMemoriesCalendar);
 
 // === Locket Photos ===
-router.post('/locket/send', verifyCoupleAccess, uploadLocket.single('photo'), sendLocket);
+router.post('/locket/send', verifyCoupleAccess, upload.single('photo'), sendLocket);
 router.get('/locket/unviewed', getUnviewedLocket);
 router.post('/locket/:locket_id/view', viewLocket);
 router.get('/locket/vault', verifyCoupleAccess, getVaultAlbum);
