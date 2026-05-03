@@ -12,14 +12,14 @@ const {
   updateNotificationSettings,
 } = require('../controllers/settingsController');
 const { authenticateToken } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { uploadLocket } = require('../middleware/upload');
 
 // Tất cả các route Settings cần xác thực
 router.use(authenticateToken);
 
 // === Hồ sơ người dùng ===
 router.get('/profile', getProfile);
-router.put('/profile', upload.single('avatar'), updateProfile);
+router.put('/profile', uploadLocket.single('avatar'), updateProfile);
 router.put('/password', updatePassword);
 
 // === Tùy chỉnh giao diện ===

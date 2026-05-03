@@ -1,6 +1,5 @@
 // controllers/settingsController.js
 const userService = require('../services/userService');
-const { uploadToS3, deleteFromS3 } = require('../services/s3Service');
 const R = require('../utils/response');
 
 const getProfile = async (req, res) => {
@@ -17,21 +16,10 @@ const updateProfile = async (req, res) => {
   try {
     const { display_name, nickname, avatar_url, date_of_birth, gender } = req.body;
 
-    let finalAvatarUrl = avatar_url; // mặc định dùng URL string nếu có
+    const finalAvatarUrl = req.file?.location ?? avatar_url;
 
-    // Nếu có file upload (multipart) → upload lên S3 trước
     if (req.file) {
-      // Xóa ảnh cũ trên S3 (non-critical)
-      const currentUser = req.user;
-      if (currentUser?.avatar_url) {
-        await deleteFromS3(currentUser.avatar_url);
-      }
-
-      finalAvatarUrl = await uploadToS3(
-        req.file.buffer,
-        req.file.originalname,
-        'avatars',
-      );
+      console.log('[Settings] Avatar uploaded to S3:', finalAvatarUrl);
     }
 
     const result = await userService.updateProfile(req.user.id, {
