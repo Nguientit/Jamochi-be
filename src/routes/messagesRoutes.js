@@ -13,7 +13,7 @@ const {
   getMemoriesCalendar
 } = require('../controllers/messagesController');
 const { authenticateToken, verifyCoupleAccess } = require('../middleware/auth');
-const { upload } = require('../middleware/upload');
+const upload = require('../middleware/upload');
 
 router.use(authenticateToken);
 
