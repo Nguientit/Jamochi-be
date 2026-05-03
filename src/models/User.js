@@ -29,7 +29,7 @@ const User = sequelize.define('User', {
     allowNull: false,
   },
   nickname: {
-    type: DataTypes.STRING(100),   // tên gọi do bạn đặt: "em yêu", "baby"...
+    type: DataTypes.STRING(100),
     allowNull: true,
   },
   avatar_url: {
@@ -79,12 +79,6 @@ const User = sequelize.define('User', {
     allowNull: true,
   },
 
-  // --- Device token cho push notification ---
-  fcm_token: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-  },
-
   // --- Trạng thái ---
   is_active: {
     type: DataTypes.BOOLEAN,
@@ -92,10 +86,6 @@ const User = sequelize.define('User', {
   },
   last_seen_at: {
     type: DataTypes.DATE,
-    allowNull: true,
-  },
-  fcm_token: {
-    type: DataTypes.TEXT,
     allowNull: true,
   },
 }, {

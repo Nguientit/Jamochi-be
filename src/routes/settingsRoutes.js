@@ -10,7 +10,6 @@ const {
   updateTheme,
   getNotificationSettings,
   updateNotificationSettings,
-  updateNickname
 } = require('../controllers/settingsController');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -21,7 +20,6 @@ router.use(authenticateToken);
 router.get('/profile', getProfile);
 router.put('/profile', updateProfile);
 router.put('/password', updatePassword);
-router.put('/me/nickname', updateNickname);
 
 // === Tùy chỉnh giao diện ===
 router.put('/theme', updateTheme);

@@ -133,21 +133,16 @@ const getMe = async (userId) => {
       {
         model: User,
         as: 'user1',
-        attributes: ['id', 'display_name', 'avatar_url', 'gender'],
+        attributes: ['id', 'display_name', 'nickname', 'avatar_url', 'gender'], 
       },
       {
         model: User,
         as: 'user2',
-        attributes: ['id', 'display_name', 'avatar_url', 'gender'],
+        attributes: ['id', 'display_name', 'nickname', 'avatar_url', 'gender'],
       },
     ],
   });
   return { user, couple };
 };
 
-// ── Cập nhật FCM token ───────────────────────────────────────────────────────
-const updateFcmToken = async (userId, fcmToken) => {
-  await User.update({ fcm_token: fcmToken }, { where: { id: userId } });
-};
-
-module.exports = { register, login, generateInviteCode, acceptInvite, getMe, updateFcmToken };
+module.exports = { register, login, generateInviteCode, acceptInvite, getMe };
